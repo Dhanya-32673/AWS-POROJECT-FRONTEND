@@ -18,8 +18,10 @@ import {
 } from "lucide-react";
 import { API_ORIGIN, getNormalizedApiBaseUrl } from "../../services/api";
 import { toast as hotToast } from "react-hot-toast";
+import { usePageTitle } from "../../hooks/usePageTitle";
 
 const Login = () => {
+  usePageTitle("Login");
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { isAuthenticated, user, isInactiveLoggedOut, adminVerifyOtp, studentLogin, facultyLogin, setAuthUser } = useAuth();
@@ -45,7 +47,7 @@ const Login = () => {
   useEffect(() => {
     const googleErr = searchParams.get("error");
     if (googleErr === "unauthorized" || googleErr === "google_unauthorized" || googleErr === "google_not_authorized") {
-      setError("Your Google account is not authorized for SICMS access. Please contact the administrator.");
+      setError("Your Google account is not authorized for Student Management System access. Please contact the administrator.");
     } else if (googleErr === "role_not_allowed") {
       setError("Your role is not authorized for portal access. Please contact the administrator.");
     } else if (googleErr === "account_disabled") {
@@ -152,7 +154,7 @@ const Login = () => {
         email={targetEmail}
         length={4}
         title="Admin Security Verification"
-        subtitle="Student Information & Certificate Management System"
+        subtitle="Student Management System"
         onVerify={async (code) => {
           const response = await adminVerifyOtp(targetEmail, code);
           const targetUser = response?.user || { email: targetEmail, role: 'ADMIN' };
@@ -172,7 +174,7 @@ const Login = () => {
   return (
     <AuthLayout
       title={roleTab === "ADMIN" ? "Admin Portal" : "Student Portal"}
-      subtitle="Student Information & Certificate Management System"
+      subtitle="Student Management System"
     >
       <div className="w-full max-w-[430px] mx-auto space-y-3.5 my-auto px-1 sm:px-0">
         

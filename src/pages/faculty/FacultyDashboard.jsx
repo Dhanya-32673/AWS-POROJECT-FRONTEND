@@ -9,8 +9,10 @@ import ImportStudentsModal from '../../components/students/ImportStudentsModal';
 import dashboardService from '../../services/dashboardService';
 import { useDataRefresh } from '../../utils/dataSync';
 import { Loader2, UserPlus, FileSpreadsheet } from 'lucide-react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 export const FacultyDashboard = () => {
+  usePageTitle('Faculty Dashboard');
   const navigate = useNavigate();
   const [summary, setSummary] = useState(null);
   const [loading, setLoading] = useState(true);

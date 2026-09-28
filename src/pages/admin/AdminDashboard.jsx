@@ -31,10 +31,12 @@ import {
 } from 'recharts';
 
 import { useApiCache } from '../../utils/useApiCache';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const DEPT_COLORS = ['#2563EB', '#3B82F6', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899'];
 
 export const AdminDashboard = () => {
+  usePageTitle('Dashboard');
   const navigate = useNavigate();
 
   const { data: summary, loading, refetch: fetchSummary } = useApiCache(

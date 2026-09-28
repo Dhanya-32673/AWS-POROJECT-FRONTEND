@@ -9,8 +9,10 @@ import { Clock, CheckCircle2, XCircle, Eye } from 'lucide-react';
 
 import { useToast } from '../../../context/ToastContext';
 import { useDataRefresh } from '../../../utils/dataSync';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const PendingDocuments = () => {
+  usePageTitle('Pending Documents');
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const rawRole = (typeof user?.role === 'string' ? user.role : user?.role?.roleName || user?.role?.name || '').replace('ROLE_', '').toUpperCase();

@@ -24,7 +24,7 @@ const RoleRoute = ({ allowedRoles = [], children }) => {
       <div className="min-h-screen w-full flex items-center justify-center bg-slate-900 text-white">
         <div className="flex flex-col items-center gap-3">
           <div className="animate-spin h-10 w-10 border-4 border-blue-500 border-t-transparent rounded-full" />
-          <span className="text-xs font-semibold tracking-wider uppercase text-slate-400">Loading Portal...</span>
+          <span className="text-xs font-semibold tracking-wider uppercase text-slate-400">Loading Student Management System...</span>
         </div>
       </div>
     );

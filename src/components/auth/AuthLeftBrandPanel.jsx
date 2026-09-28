@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ShieldCheck, RefreshCw, UserCheck, GraduationCap } from 'lucide-react';
+import { StudentManagementLogo } from '../common/StudentManagementLogo';
 
-export const AuthLeftBrandPanel = ({ title = "Admin Portal", subtitle = "Student Information & Certificate Management System" }) => {
+export const AuthLeftBrandPanel = ({ title = "Admin Portal", subtitle = "Student Management System" }) => {
   return (
     <div className="relative w-full lg:w-[42%] bg-gradient-to-br from-[#0f4fff] via-[#2563eb] to-[#3b82f6] p-4 sm:p-5 lg:p-7 text-white flex flex-col justify-between overflow-hidden rounded-t-[24px] lg:rounded-t-none lg:rounded-l-[24px] shrink-0">
       
@@ -26,27 +27,7 @@ export const AuthLeftBrandPanel = ({ title = "Admin Portal", subtitle = "Student
 
       {/* Top Header Logo Section */}
       <div className="relative z-10 flex items-center justify-between lg:block">
-        <div className="inline-flex items-center gap-2.5 sm:gap-3 bg-white/10 backdrop-blur-md p-1.5 sm:p-2 pr-3 sm:pr-4 rounded-xl border border-white/20 shadow-sm max-w-full">
-          <div className="w-[36px] h-[36px] sm:w-[42px] sm:h-[42px] bg-white rounded-lg p-1 flex items-center justify-center shadow-sm shrink-0">
-            <img
-              src="https://ookzjdmkoaunbrufvmvq.supabase.co/storage/v1/object/public/student-profile-photos/info/ChatGPT%20Image%20Aug%206,%202026,%2012_07_23%20AM.png"
-              alt="Bhashyam IIT JEE Academy"
-              className="w-full h-full object-contain"
-              loading="eager"
-              onError={(e) => {
-                e.target.classList.add('hidden');
-                if (e.target.nextSibling) e.target.nextSibling.classList.remove('hidden');
-              }}
-            />
-            <div className="hidden w-full h-full rounded-md bg-blue-50 flex items-center justify-center">
-              <GraduationCap className="w-4 h-4 text-blue-600" />
-            </div>
-          </div>
-          <div className="text-left">
-            <span className="font-black text-white text-base sm:text-lg tracking-wider block leading-none">BHASHYAM</span>
-            <span className="text-[7.5px] sm:text-[8.5px] text-blue-100 font-extrabold uppercase tracking-widest block mt-0.5">IIT JEE ACADEMY</span>
-          </div>
-        </div>
+        <StudentManagementLogo variant="login" />
 
         {/* Mobile Portal Badge */}
         <span className="lg:hidden text-[11px] font-bold bg-white/20 px-2.5 py-1 rounded-lg border border-white/30 text-white shadow-xs">

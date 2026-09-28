@@ -7,8 +7,10 @@ import CertificatePreviewModal from '../../../components/certificates/Certificat
 import certificateService from '../../../services/certificateService';
 import { useDataRefresh } from '../../../utils/dataSync';
 import { Award, Eye } from 'lucide-react';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const VerifiedDocuments = () => {
+  usePageTitle('Verified Documents');
   const { user } = useAuth();
   const rawRole = (typeof user?.role === 'string' ? user.role : user?.role?.roleName || user?.role?.name || '').replace('ROLE_', '').toUpperCase();
   const Layout = rawRole === 'FACULTY' ? FacultyLayout : AdminLayout;

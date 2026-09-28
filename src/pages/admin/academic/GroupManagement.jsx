@@ -6,8 +6,10 @@ import DeleteConfirmationModal from '../../../components/common/DeleteConfirmati
 
 import { useToast } from '../../../context/ToastContext';
 import { useDataRefresh } from '../../../utils/dataSync';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const GroupManagement = () => {
+  usePageTitle('Academic Groups');
   const { showSuccess, showError } = useToast();
   const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -21,8 +21,10 @@ import {
   ArrowRight,
   X
 } from 'lucide-react';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const UploadCertificate = () => {
+  usePageTitle('Upload Certificate');
   const navigate = useNavigate();
   const { user } = useAuth();
   const { showSuccess, showError, showWarning } = useToast();

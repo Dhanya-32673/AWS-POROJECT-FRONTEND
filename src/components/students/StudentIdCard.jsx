@@ -17,7 +17,7 @@ import { GraduationCap } from 'lucide-react';
  * - Balance: ~75% white, ~25% blue. Clean, modern, trustworthy academic styling.
  * - Vertical portrait format (approx 0.63 : 1 ratio, width ~360-380px)
  * - ONLY 6 student details:
- *   1. College Name: BHASHYAM JR COLLEGE
+ *   1. Institution / App Name: STUDENT MANAGEMENT SYSTEM
  *   2. Card Title: STUDENT IDENTITY CARD
  *   3. Student Photo / Initials
  *   4. Student Name
@@ -89,8 +89,7 @@ export const StudentIdCard = ({
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
 
-  const bhashyamLogoUrl =
-    'https://ookzjdmkoaunbrufvmvq.supabase.co/storage/v1/object/public/student-profile-photos/info/ChatGPT%20Image%20Aug%206,%202026,%2012_07_23%20AM.png';
+  const appLogoUrl = '/logo.png';
 
   const hasPhoto =
     resolvedPhoto &&
@@ -124,8 +123,8 @@ export const StudentIdCard = ({
         <div className="w-13 h-13 sm:w-14 sm:h-14 bg-white rounded-xl p-1.5 shadow-sm border border-white/40 flex items-center justify-center mx-auto mb-2.5">
           {!logoError ? (
             <img
-              src={bhashyamLogoUrl}
-              alt="Bhashyam College Logo"
+              src={appLogoUrl}
+              alt="Student Management System Logo"
               className="w-full h-full object-contain"
               loading="eager"
               onError={() => setLogoError(true)}
@@ -137,9 +136,9 @@ export const StudentIdCard = ({
           )}
         </div>
 
-        {/* Prominent College Name */}
-        <h1 className="text-base sm:text-[18px] font-black tracking-wider uppercase text-white leading-tight">
-          BHASHYAM JR COLLEGE
+        {/* Prominent Application / Institution Name */}
+        <h1 className="text-sm sm:text-[16px] font-black tracking-wider uppercase text-white leading-tight">
+          STUDENT MANAGEMENT SYSTEM
         </h1>
 
         {/* Card Title */}

@@ -24,6 +24,10 @@ const StudentLayoutContent = ({ children }) => {
             </StudentErrorBoundary>
           </div>
         </main>
+
+        <footer className="px-6 py-4 border-t border-slate-200/60 dark:border-slate-800/60 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+          © 2026 Student Management System. All rights reserved.
+        </footer>
       </div>
     </div>
   );

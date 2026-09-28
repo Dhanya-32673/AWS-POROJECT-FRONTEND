@@ -3,6 +3,8 @@ import { useClickOutside, createToggleHandler } from '../hooks/useClickOutside';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { StudentManagementLogo } from '../components/common/StudentManagementLogo';
+import { APP_COPYRIGHT } from '../constants/branding';
 import {
   GraduationCap,
   LayoutDashboard,
@@ -115,30 +117,12 @@ export const AdminLayout = ({ children }) => {
       >
         {/* Sidebar Header Logo Card */}
         <div className="p-4 border-b border-blue-600 bg-blue-600 text-white flex items-center justify-between shadow-md">
-          <Link to="/admin/dashboard" className="flex items-center space-x-3 group min-h-[40px]">
-            <div className="relative flex items-center justify-center shrink-0">
-              <img
-                src="https://ookzjdmkoaunbrufvmvq.supabase.co/storage/v1/object/public/student-profile-photos/info/ChatGPT%20Image%20Aug%206,%202026,%2012_07_23%20AM.png"
-                alt="Bhashyam IIT JEE Academy"
-                className="w-8 h-8 rounded-lg object-contain shrink-0 group-hover:scale-105 transition"
-                loading="eager"
-                onError={(e) => {
-                  e.target.classList.add('hidden');
-                  if (e.target.nextSibling) e.target.nextSibling.classList.remove('hidden');
-                }}
-              />
-              <div className="hidden w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-white" />
-              </div>
-            </div>
-            <div className="truncate">
-              <span className="font-black text-white text-base tracking-wider block leading-tight truncate">BHASHYAM</span>
-              <span className="text-[8.5px] text-blue-100 font-extrabold uppercase tracking-widest block mt-0.5 truncate">IIT JEE ACADEMY</span>
-            </div>
+          <Link to="/admin/dashboard" className="flex items-center space-x-3 group min-h-[40px] min-w-0">
+            <StudentManagementLogo variant="sidebar" size="md" />
           </Link>
           <button
             onClick={() => setMobileOpen(false)}
-            className="lg:hidden text-white/90 hover:text-white p-2 rounded-xl hover:bg-white/10 transition min-w-[44px] min-h-[44px] flex items-center justify-center"
+            className="lg:hidden text-white/90 hover:text-white p-2 rounded-xl hover:bg-white/10 transition min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer shrink-0"
             aria-label="Close menu"
           >
             <X className="w-5 h-5" />
@@ -364,7 +348,7 @@ export const AdminLayout = ({ children }) => {
         <header className="h-16 bg-white/85 dark:bg-slate-900/85 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800/80 px-3 sm:px-6 flex items-center justify-between sticky top-0 z-30 shadow-xs">
 
           {/* Left Section: Mobile Menu + Brand + Global Search */}
-          <div className="flex items-center space-x-2 sm:space-x-4 flex-1 max-w-xl min-w-0">
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-1 max-w-2xl min-w-0">
             <button
               onClick={() => setMobileOpen(true)}
               className="lg:hidden p-2.5 rounded-xl text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 min-w-[44px] min-h-[44px] flex items-center justify-center shrink-0 cursor-pointer"
@@ -373,10 +357,8 @@ export const AdminLayout = ({ children }) => {
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Mobile Brand Title */}
-            <div className="flex items-center space-x-1.5 sm:hidden shrink-0">
-              <span className="font-black text-blue-600 dark:text-blue-400 text-sm tracking-tight">SICMS</span>
-            </div>
+            {/* Brand in Header */}
+            <StudentManagementLogo variant="header" size="sm" linkTo="/admin/dashboard" className="shrink-0" />
 
             {/* Global Search Input (Desktop) */}
             <div className="relative w-full max-w-md hidden sm:block">
@@ -493,7 +475,7 @@ export const AdminLayout = ({ children }) => {
                 <div className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-32px)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 z-50 text-xs animate-dropdown-enter" role="menu">
                   <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800">
                     <p className="font-extrabold text-slate-900 dark:text-white truncate">{user?.fullName || 'Administrator'}</p>
-                    <p className="text-slate-400 text-[11px] truncate">{user?.email || 'admin@bhashyam.edu'}</p>
+                    <p className="text-slate-400 text-[11px] truncate">{user?.email || 'admin@studentmanagementsystem.com'}</p>
                   </div>
                   <button
                     onClick={() => {
@@ -552,6 +534,11 @@ export const AdminLayout = ({ children }) => {
 
         {/* Main Content Render Area */}
         <main className="flex-1 p-3 sm:p-6 lg:p-8 overflow-y-auto pb-safe">{children}</main>
+
+        {/* Footer */}
+        <footer className="px-6 py-4 border-t border-slate-200/60 dark:border-slate-800/60 text-center text-xs text-slate-400 dark:text-slate-500 font-medium">
+          {APP_COPYRIGHT}
+        </footer>
       </div>
     </div>
   );

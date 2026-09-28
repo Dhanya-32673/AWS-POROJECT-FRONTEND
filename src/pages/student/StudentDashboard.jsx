@@ -19,6 +19,7 @@ import {
   RefreshCw,
   AlertCircle
 } from 'lucide-react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const DashboardSkeleton = () => (
   <div className="space-y-6 animate-pulse">
@@ -82,6 +83,8 @@ export const StudentDashboard = () => {
   const email = formatStudentField(student.email);
   const initials = getStudentInitials(fullName);
 
+  usePageTitle('Student Dashboard');
+
   return (
     <div className="space-y-6">
       {/* 1. WELCOME CARD */}
@@ -89,7 +92,7 @@ export const StudentDashboard = () => {
         <div className="relative z-10 max-w-3xl">
           <div className="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-bold tracking-wider uppercase text-blue-100 mb-3">
             <GraduationCap className="w-4 h-4" />
-            <span>Student Portal &bull; Bhashyam IIT JEE Academy</span>
+            <span>Student Portal &bull; Student Management System</span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight leading-tight">

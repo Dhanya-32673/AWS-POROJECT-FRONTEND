@@ -51,13 +51,29 @@ const StudentProfilePage = lazy(() => import('./pages/student/StudentProfilePage
 const StudentCertificatesPage = lazy(() => import('./pages/student/StudentCertificatesPage').then(m => ({ default: m.StudentCertificatesPage || m.default })));
 const StudentChangePassword = lazy(() => import('./pages/student/StudentChangePassword').then(m => ({ default: m.StudentChangePassword || m.default })));
 
+// Error Pages (Lazy loaded)
+const NotFound = lazy(() => import('./pages/error/NotFound'));
+const Unauthorized = lazy(() => import('./pages/error/Unauthorized'));
+
 import { warmupServer } from './services/api';
 
 const RouteFallback = () => (
-  <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-    <div className="flex items-center space-x-3 text-blue-400 font-bold text-sm">
-      <span className="inline-block animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent" />
-      <span>Loading Page...</span>
+  <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4">
+    <div className="flex flex-col items-center space-y-4">
+      <div className="w-16 h-16 rounded-2xl bg-white p-2 flex items-center justify-center shadow-xl shadow-blue-500/10">
+        <img
+          src="/logo.png"
+          alt="Student Management System"
+          className="w-full h-full object-contain animate-pulse"
+        />
+      </div>
+      <div className="text-center">
+        <h2 className="text-white font-black text-sm tracking-wider uppercase">STUDENT MANAGEMENT SYSTEM</h2>
+        <div className="flex items-center justify-center space-x-2 text-blue-400 font-semibold text-xs mt-2">
+          <span className="inline-block animate-spin rounded-full h-3.5 w-3.5 border-2 border-blue-500 border-t-transparent" />
+          <span>Loading...</span>
+        </div>
+      </div>
     </div>
   </div>
 );
@@ -277,8 +293,10 @@ function App() {
             }
           />
 
-          {/* Catch-all redirect */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          {/* Error and Fallback Routes */}
+          <Route path="/unauthorized" element={<Unauthorized />} />
+          <Route path="/404" element={<NotFound />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
           </Suspense>
         </AuthProvider>

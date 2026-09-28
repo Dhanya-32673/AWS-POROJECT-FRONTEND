@@ -22,6 +22,7 @@ import {
   AlertCircle,
   Clock
 } from 'lucide-react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const ProfileField = ({ label, value, isAadhaar = false, showAadhaar = false, onToggleAadhaar = null }) => {
   return (
@@ -95,6 +96,8 @@ export const StudentProfilePage = () => {
   const admissionNumber = student.admissionNumber || 'Not Assigned';
   const initials = getStudentInitials(fullName);
 
+  usePageTitle('My Profile');
+
   return (
     <div className="space-y-6">
       {/* PAGE HEADER */}
@@ -104,7 +107,7 @@ export const StudentProfilePage = () => {
             My Profile
           </h1>
           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mt-0.5">
-            Official student record information &bull; Bhashyam IIT JEE Academy
+            Official student record information &bull; Student Management System
           </p>
         </div>
 
@@ -150,7 +153,7 @@ export const StudentProfilePage = () => {
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                Official Enrolled Student &bull; Bhashyam IIT JEE Academy
+                Official Enrolled Student &bull; Student Management System
               </p>
             </div>
 

@@ -14,8 +14,10 @@ import { useDeleteAnimation } from '../../../hooks/useDeleteAnimation';
 import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal';
 import AnimatedDeleteWrapper from '../../../components/common/AnimatedDeleteWrapper';
 import DeleteLoadingOverlay from '../../../components/common/DeleteLoadingOverlay';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const CampusManagement = () => {
+  usePageTitle('Campus Management');
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();
   const rawRole = (typeof user?.role === 'string' ? user.role : user?.role?.roleName || user?.role?.name || '').replace('ROLE_', '').toUpperCase();

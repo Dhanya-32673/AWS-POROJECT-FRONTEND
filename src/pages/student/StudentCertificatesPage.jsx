@@ -17,8 +17,10 @@ import {
   RefreshCw,
   FolderOpen
 } from 'lucide-react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 export const StudentCertificatesPage = () => {
+  usePageTitle('My Certificates');
   const { certificates, certificatesLoading, error, refreshCertificates } = useStudentPortal();
   const [searchTerm, setSearchTerm] = useState('');
   const [previewDoc, setPreviewDoc] = useState(null);
@@ -66,7 +68,7 @@ export const StudentCertificatesPage = () => {
               My Certificates
             </h1>
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400 mt-0.5">
-              View your official certificates and documents &bull; Bhashyam IIT JEE Academy
+              View your official certificates and documents &bull; Student Management System
             </p>
           </div>
         </div>

@@ -7,8 +7,10 @@ import AdminLayout from '../../../layouts/AdminLayout';
 import FacultyLayout from '../../../layouts/FacultyLayout';
 import { useAuth } from '../../../context/AuthContext';
 import { useToast } from '../../../context/ToastContext';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const AddStudent = () => {
+  usePageTitle('Add Student');
   const navigate = useNavigate();
   const { user } = useAuth();
   const { showSuccess, showError } = useToast();

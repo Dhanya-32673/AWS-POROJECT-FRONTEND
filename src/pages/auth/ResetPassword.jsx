@@ -19,7 +19,10 @@ import {
   ArrowRight
 } from 'lucide-react';
 
+import { usePageTitle } from '../../hooks/usePageTitle';
+
 const ResetPassword = () => {
+  usePageTitle('Reset Password');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -68,7 +71,7 @@ const ResetPassword = () => {
           employeeId: '',
           reason: 'Faculty password reset request',
         });
-        setInfoMsg('Authorization OTP sent to Admin email (bhashyamgnt.edu@gmail.com)');
+        setInfoMsg('Authorization OTP sent to System Administration email');
       } else {
         await authService.forgotPassword(cleanEmail);
         setInfoMsg(`6-digit verification code sent to ${cleanEmail}`);
@@ -146,7 +149,7 @@ const ResetPassword = () => {
   return (
     <AuthLayout
       title={mode === 'FACULTY' ? "Faculty Recovery" : "Reset Password"}
-      subtitle="Student Information & Certificate Management System"
+      subtitle="Student Management System"
     >
       <div className="w-full max-w-[430px] mx-auto space-y-2.5 my-auto">
         
@@ -266,7 +269,7 @@ const ResetPassword = () => {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder={mode === 'FACULTY' ? "faculty.email@college.edu" : "Registered Email"}
+                  placeholder={mode === 'FACULTY' ? "faculty.email@studentmanagementsystem.com" : "Registered Email"}
                   required
                   className="w-full bg-transparent text-slate-900 font-semibold text-xs placeholder-slate-400 focus:outline-none min-w-0"
                 />

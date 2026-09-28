@@ -49,6 +49,7 @@ import {
   KeyRound,
   UserCheck
 } from 'lucide-react';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const StudentProfile = () => {
   const { id } = useParams();
@@ -59,6 +60,7 @@ export const StudentProfile = () => {
   const Layout = isAdmin ? AdminLayout : FacultyLayout;
 
   const [student, setStudent] = useState(null);
+  usePageTitle(student?.fullName ? `${student.fullName} - Student Profile` : 'Student Profile');
   const [documents, setDocuments] = useState([]);
   const [documentTypes, setDocumentTypes] = useState([]);
   const [loading, setLoading] = useState(true);

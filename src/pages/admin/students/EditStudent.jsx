@@ -5,8 +5,10 @@ import StudentForm from '../../../components/students/StudentForm';
 import studentService from '../../../services/studentService';
 import AdminLayout from '../../../layouts/AdminLayout';
 import { useToast } from '../../../context/ToastContext';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const EditStudent = () => {
+  usePageTitle('Edit Student');
   const { id } = useParams();
   const navigate = useNavigate();
   const { showSuccess, showError } = useToast();

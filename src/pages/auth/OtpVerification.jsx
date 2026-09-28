@@ -5,8 +5,10 @@ import { authService } from '../../services/authService';
 import { tokenUtils } from '../../utils/tokenUtils';
 import OtpVerificationCard from '../../components/OtpVerificationCard';
 import { Mail, ArrowLeft, KeyRound, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const OtpVerification = () => {
+  usePageTitle('OTP Verification');
   const navigate = useNavigate();
   const { verifyOtp, setAuthUser } = useAuth();
 
@@ -47,7 +49,7 @@ const OtpVerification = () => {
         email={cleanEmail}
         length={6}
         title="Security Verification"
-        subtitle="Student Information & Certificate Management System"
+        subtitle="Student Management System"
         onVerify={async (code) => {
           const response = await verifyOtp(cleanEmail, code);
           const targetUser = response?.user || tokenUtils.getUser();

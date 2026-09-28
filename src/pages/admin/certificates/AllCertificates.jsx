@@ -19,8 +19,10 @@ import {
 
 import { useDebounce } from '../../../hooks/useDebounce';
 import { useDataRefresh } from '../../../utils/dataSync';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const AllCertificates = () => {
+  usePageTitle('Certificates');
   const navigate = useNavigate();
   const { user } = useAuth();
   const rawRole = (typeof user?.role === 'string' ? user.role : user?.role?.roleName || user?.role?.name || '').replace('ROLE_', '').toUpperCase();

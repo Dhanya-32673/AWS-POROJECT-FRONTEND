@@ -7,8 +7,10 @@ import { useDataRefresh } from '../../../utils/dataSync';
 import ConfirmationModal from '../../../components/common/ConfirmationModal';
 import certificateService from '../../../services/certificateService';
 import { FileText, Plus, Edit3, Trash2, X, CheckCircle2, AlertCircle } from 'lucide-react';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const CertificateTypes = () => {
+  usePageTitle('Certificate Types');
   const { user } = useAuth();
   const rawRole = (typeof user?.role === 'string' ? user.role : user?.role?.roleName || user?.role?.name || '').replace('ROLE_', '').toUpperCase();
   const isAdmin = rawRole === 'ADMIN';

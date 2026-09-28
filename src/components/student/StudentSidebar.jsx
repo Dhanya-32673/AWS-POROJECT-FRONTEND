@@ -10,6 +10,7 @@ import {
   X,
   GraduationCap
 } from 'lucide-react';
+import { StudentManagementLogo } from '../common/StudentManagementLogo';
 
 export const StudentSidebar = ({ mobileOpen, setMobileOpen }) => {
   const { logout } = useAuth();
@@ -93,34 +94,13 @@ export const StudentSidebar = ({ mobileOpen, setMobileOpen }) => {
       >
         {/* Brand Header */}
         <div className="p-4 border-b border-blue-600 bg-blue-600 text-white flex items-center justify-between shadow-sm">
-          <Link to="/student/dashboard" className="flex items-center space-x-3 group min-h-[44px]">
-            <div className="relative flex items-center justify-center shrink-0">
-              <img
-                src="https://ookzjdmkoaunbrufvmvq.supabase.co/storage/v1/object/public/student-profile-photos/info/ChatGPT%20Image%20Aug%206,%202026,%2012_07_23%20AM.png"
-                alt="Bhashyam IIT JEE Academy"
-                className="w-9 h-9 rounded-lg object-contain shrink-0 group-hover:scale-105 transition-transform"
-                onError={(e) => {
-                  e.target.classList.add('hidden');
-                  if (e.target.nextSibling) e.target.nextSibling.classList.remove('hidden');
-                }}
-              />
-              <div className="hidden w-9 h-9 rounded-lg bg-white/20 flex items-center justify-center">
-                <GraduationCap className="w-5 h-5 text-white" />
-              </div>
-            </div>
-            <div className="truncate">
-              <span className="font-black text-white text-base tracking-wider block leading-tight truncate">
-                BHASHYAM
-              </span>
-              <span className="text-[9px] text-blue-100 font-extrabold uppercase tracking-wider block mt-0.5 truncate">
-                IIT JEE ACADEMY
-              </span>
-            </div>
+          <Link to="/student/dashboard" className="flex items-center space-x-3 group min-h-[44px] min-w-0">
+            <StudentManagementLogo variant="sidebar" size="md" />
           </Link>
 
           <button
             onClick={() => setMobileOpen(false)}
-            className="lg:hidden text-white/90 hover:text-white p-2 rounded-xl hover:bg-white/10 transition min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
+            className="lg:hidden text-white/90 hover:text-white p-2 rounded-xl hover:bg-white/10 transition min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer shrink-0"
             aria-label="Close navigation menu"
           >
             <X className="w-5 h-5" />

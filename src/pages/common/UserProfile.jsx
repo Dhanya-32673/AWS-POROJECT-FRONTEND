@@ -5,8 +5,10 @@ import FacultyLayout from '../../layouts/FacultyLayout';
 import { useAuth } from '../../context/AuthContext';
 import ChangePasswordForm from '../../components/profile/ChangePasswordForm';
 import { User, Key, ShieldCheck, Mail, Phone, Calendar, MapPin, Award, Building, UserCheck } from 'lucide-react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 export const UserProfile = () => {
+  usePageTitle('My Profile');
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const defaultTab = searchParams.get('tab') || 'personal';
@@ -53,7 +55,7 @@ export const UserProfile = () => {
               </div>
               <p className="text-xs text-blue-100 mt-1 flex items-center justify-center sm:justify-start space-x-1.5 font-medium">
                 <Mail className="w-3.5 h-3.5 text-blue-200" />
-                <span>{user?.email || 'bhashyamgnt.edu@gmail.com'}</span>
+                <span>{user?.email || 'admin@studentmanagementsystem.com'}</span>
               </p>
               <p className="text-xs text-blue-100 mt-1">
                 Account Status: <strong className="text-emerald-300">ACTIVE</strong> • Account ID: <strong className="font-mono text-white">#{user?.id || 1}</strong>
@@ -116,7 +118,7 @@ export const UserProfile = () => {
 
               <div className="space-y-1">
                 <span className="text-[11px] font-bold text-slate-400 block">Email Address</span>
-                <p className="font-bold text-blue-600 dark:text-blue-400">{user?.email || 'bhashyamgnt.edu@gmail.com'}</p>
+                <p className="font-bold text-blue-600 dark:text-blue-400">{user?.email || 'admin@studentmanagementsystem.com'}</p>
               </div>
 
               <div className="space-y-1">

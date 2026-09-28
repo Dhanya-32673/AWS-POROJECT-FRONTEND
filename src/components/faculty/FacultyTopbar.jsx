@@ -15,6 +15,7 @@ import {
   Key,
   LogOut
 } from 'lucide-react';
+import { StudentManagementLogo } from '../common/StudentManagementLogo';
 
 export const FacultyTopbar = ({ setMobileOpen }) => {
   const { user, logout } = useAuth();
@@ -66,10 +67,8 @@ export const FacultyTopbar = ({ setMobileOpen }) => {
             <Menu className="w-5 h-5" />
           </button>
 
-          <div className="lg:hidden flex items-center gap-1.5 font-bold text-slate-900 dark:text-white text-sm">
-            <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-            <span className="tracking-tight">SICMS</span>
-          </div>
+          {/* Brand in Header */}
+          <StudentManagementLogo variant="header" size="sm" linkTo="/faculty/dashboard" className="shrink-0" />
 
           {/* Global Search Input (Desktop) */}
           <div className="relative w-full max-w-md hidden sm:block">
@@ -175,7 +174,7 @@ export const FacultyTopbar = ({ setMobileOpen }) => {
               <div className="absolute right-0 mt-2 w-56 max-w-[calc(100vw-32px)] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl py-2 z-50 text-xs animate-dropdown-enter" role="menu">
                 <div className="px-4 py-2.5 border-b border-slate-100 dark:border-slate-800">
                   <p className="font-extrabold text-slate-900 dark:text-white truncate">{user?.fullName || 'Faculty Member'}</p>
-                  <p className="text-slate-400 text-[11px] truncate">{user?.email || 'faculty@bhashyam.edu'}</p>
+                  <p className="text-slate-400 text-[11px] truncate">{user?.email || 'faculty@studentmanagementsystem.com'}</p>
                 </div>
                 <button
                   onClick={() => {

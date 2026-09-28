@@ -6,8 +6,10 @@ import studentService from '../../../services/studentService';
 import { useAuth } from '../../../context/AuthContext';
 import AdminLayout from '../../../layouts/AdminLayout';
 import FacultyLayout from '../../../layouts/FacultyLayout';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const StudentIdCard = () => {
+  usePageTitle('Student ID Card');
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();

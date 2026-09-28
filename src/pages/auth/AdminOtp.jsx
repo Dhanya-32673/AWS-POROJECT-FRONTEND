@@ -4,12 +4,14 @@ import OtpVerificationCard from '../../components/OtpVerificationCard';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../context/AuthContext';
 import { tokenUtils } from '../../utils/tokenUtils';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 const AdminOtp = () => {
+  usePageTitle('Admin Security Verification');
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { adminVerifyOtp, setAuthUser } = useAuth();
-  const email = searchParams.get('email') || localStorage.getItem('pendingEmail') || 'bhashyamgnt.edu@gmail.com';
+  const email = searchParams.get('email') || localStorage.getItem('pendingEmail') || 'admin@studentmanagementsystem.com';
 
   const handleVerify = async (code) => {
     const response = await adminVerifyOtp(email, code);
@@ -33,7 +35,7 @@ const AdminOtp = () => {
       email={email}
       length={4}
       title="Admin Security Verification"
-      subtitle="Student Information & Certificate Management System"
+      subtitle="Student Management System"
       onVerify={handleVerify}
       onResend={handleResend}
       onBack={handleBack}

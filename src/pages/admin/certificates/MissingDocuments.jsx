@@ -22,8 +22,10 @@ import {
   FilterX
 } from 'lucide-react';
 import { useDebounce } from '../../../hooks/useDebounce';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const MissingDocuments = () => {
+  usePageTitle('Missing Documents');
   const navigate = useNavigate();
   const { user } = useAuth();
   const rawRole = (typeof user?.role === 'string' ? user.role : user?.role?.roleName || user?.role?.name || '').replace('ROLE_', '').toUpperCase();

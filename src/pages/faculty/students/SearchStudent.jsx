@@ -7,8 +7,10 @@ import StudentAvatar from '../../../components/common/StudentAvatar';
 import { formatSectionName, formatIntermediateYear } from '../../../utils/studentDataFormatter';
 
 import { useDebounce } from '../../../hooks/useDebounce';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const SearchStudent = () => {
+  usePageTitle('Search Students');
   const navigate = useNavigate();
 
   const [query, setQuery] = useState('');

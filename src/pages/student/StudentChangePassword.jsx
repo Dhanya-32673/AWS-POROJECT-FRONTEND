@@ -14,8 +14,10 @@ import {
   ArrowRight,
   Loader2
 } from 'lucide-react';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 export const StudentChangePassword = () => {
+  usePageTitle('Change Password');
   const { user, setAuthUser } = useAuth();
   const navigate = useNavigate();
 

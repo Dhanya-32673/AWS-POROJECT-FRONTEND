@@ -2,8 +2,10 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import AdminLayout from '../../../layouts/AdminLayout';
 import { ShieldCheck, CheckCircle2, Lock, Users, Key } from 'lucide-react';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const RoleManagement = () => {
+  usePageTitle('Security Roles');
   const roles = [
     {
       id: 1,

@@ -29,8 +29,10 @@ import { formatSectionName, formatBranchGroup } from '../../../utils/studentData
 import { useDeleteAnimation } from '../../../hooks/useDeleteAnimation';
 import DeleteConfirmModal from '../../../components/common/DeleteConfirmModal';
 import AnimatedDeleteWrapper from '../../../components/common/AnimatedDeleteWrapper';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 export const AllStudents = () => {
+  usePageTitle('Students');
   const navigate = useNavigate();
   const { user } = useAuth();
   const rawRole = (typeof user?.role === 'string' ? user.role : user?.role?.roleName || user?.role?.name || '').replace('ROLE_', '').toUpperCase();

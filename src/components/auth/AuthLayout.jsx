@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import AuthLeftBrandPanel from './AuthLeftBrandPanel';
 
-export const AuthLayout = ({ children, title = "Admin Portal", subtitle = "Student Information & Certificate Management System" }) => {
+export const AuthLayout = ({ children, title = "Admin Portal", subtitle = "Student Management System" }) => {
   return (
     <div className="min-h-[100dvh] min-h-screen w-full max-w-full flex items-center justify-center bg-[#f8fafc] p-2.5 sm:p-4 lg:p-6 font-sans relative overflow-x-hidden">
       

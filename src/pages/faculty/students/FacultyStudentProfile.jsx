@@ -11,6 +11,7 @@ import { formatSectionName } from '../../../utils/studentDataFormatter';
 import {
   ArrowLeft, CreditCard, User, Phone, Users, BookOpen, Award, Lock, Eye, AlertCircle
 } from 'lucide-react';
+import { usePageTitle } from '../../../hooks/usePageTitle';
 
 const InfoField = ({ label, value, mono = false, highlight = false }) => (
   <div className={`p-3 rounded-xl border ${highlight ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-100 dark:border-blue-900/60' : 'bg-slate-50 dark:bg-slate-800/80 border-slate-100 dark:border-slate-700/80'}`}>
@@ -28,6 +29,7 @@ export const FacultyStudentProfile = () => {
   const navigate = useNavigate();
 
   const [student, setStudent] = useState(null);
+  usePageTitle(student?.fullName ? `${student.fullName} - Student Profile` : 'Student Profile');
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

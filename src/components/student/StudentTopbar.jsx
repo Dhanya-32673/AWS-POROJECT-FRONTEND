@@ -15,6 +15,7 @@ import {
   ChevronDown,
   GraduationCap
 } from 'lucide-react';
+import { StudentManagementLogo } from '../common/StudentManagementLogo';
 
 export const StudentTopbar = ({ mobileOpen, setMobileOpen }) => {
   const { user, logout } = useAuth();
@@ -55,15 +56,13 @@ export const StudentTopbar = ({ mobileOpen, setMobileOpen }) => {
           </button>
 
           <div className="flex items-center space-x-2.5">
-            <div className="w-9 h-9 rounded-xl bg-blue-600/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shrink-0">
-              <GraduationCap className="w-5 h-5" />
-            </div>
+            <StudentManagementLogo variant="icon" size="sm" />
             <div>
               <h1 className="text-base sm:text-lg font-black text-slate-800 dark:text-white tracking-tight leading-tight">
                 Student Portal
               </h1>
               <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold tracking-wider uppercase hidden sm:block">
-                BHASHYAM IIT JEE ACADEMY
+                STUDENT MANAGEMENT SYSTEM
               </p>
             </div>
           </div>
