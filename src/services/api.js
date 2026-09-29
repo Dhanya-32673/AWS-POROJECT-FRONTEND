@@ -24,19 +24,26 @@ export const getNormalizedApiBaseUrl = () => {
     return 'http://localhost:8080/api';
   }
 
-  // If running in production (Vercel, mobile browser, custom domain)
+  // If running in production on HTTPS and rawEnvUrl is HTTP, route via '/api' to prevent Mixed Content blocking
+  if (isBrowser && window.location.protocol === 'https:' && rawEnvUrl.startsWith('http://')) {
+    return '/api';
+  }
+
+  // If running in production (Vercel, custom domain) with HTTPS
   if (rawEnvUrl && !rawEnvUrl.includes('localhost') && !rawEnvUrl.includes('127.0.0.1')) {
     let clean = rawEnvUrl.replace(/\/+$/, '');
     if (!clean.endsWith('/api')) clean += '/api';
     return clean;
   }
 
-  // Fallback to deployed production backend on Render
-  return 'https://studnetmanagament-systembackend.onrender.com/api';
+  // Default to relative '/api' proxy for Vercel (routed via vercel.json to Elastic Beanstalk)
+  return '/api';
 };
 
 export const API_BASE_URL = getNormalizedApiBaseUrl();
-export const API_ORIGIN = API_BASE_URL.replace(/\/api$/, '');
+export const API_ORIGIN = API_BASE_URL.startsWith('http')
+  ? API_BASE_URL.replace(/\/api$/, '')
+  : (typeof window !== 'undefined' ? window.location.origin : '');
 
 const pendingRequests = new Map();
 
