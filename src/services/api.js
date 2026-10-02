@@ -31,8 +31,8 @@ export const getNormalizedApiBaseUrl = () => {
     return clean;
   }
 
-  // Fallback to deployed production backend on Render
-  return 'https://studnetmanagament-systembackend.onrender.com/api';
+  // Fallback to deployed production backend on AWS Elastic Beanstalk
+  return 'http://sms-backend.us-east-1.elasticbeanstalk.com/api';
 };
 
 export const API_BASE_URL = getNormalizedApiBaseUrl();
