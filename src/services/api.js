@@ -16,7 +16,7 @@ export const getNormalizedApiBaseUrl = () => {
 
   // 1. Local development environment
   if (isLocalHost) {
-    if (rawEnvUrl && (rawEnvUrl.includes('localhost') || rawEnvUrl.includes('127.0.0.1'))) {
+    if (rawEnvUrl) {
       let clean = rawEnvUrl.replace(/\/+$/, '');
       if (!clean.endsWith('/api')) clean += '/api';
       return clean;
