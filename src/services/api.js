@@ -14,9 +14,9 @@ export const getNormalizedApiBaseUrl = () => {
     window.location.hostname === '0.0.0.0'
   );
 
-  // If running locally in browser
+  // 1. Local development environment
   if (isLocalHost) {
-    if (rawEnvUrl && rawEnvUrl.includes('localhost')) {
+    if (rawEnvUrl && (rawEnvUrl.includes('localhost') || rawEnvUrl.includes('127.0.0.1'))) {
       let clean = rawEnvUrl.replace(/\/+$/, '');
       if (!clean.endsWith('/api')) clean += '/api';
       return clean;
@@ -24,19 +24,34 @@ export const getNormalizedApiBaseUrl = () => {
     return 'http://localhost:8080/api';
   }
 
-  // If running in production (Vercel, mobile browser, custom domain)
-  if (rawEnvUrl && !rawEnvUrl.includes('localhost') && !rawEnvUrl.includes('127.0.0.1')) {
+  // 2. Production environment with explicitly configured HTTPS backend URL
+  if (rawEnvUrl && rawEnvUrl.startsWith('https://')) {
     let clean = rawEnvUrl.replace(/\/+$/, '');
     if (!clean.endsWith('/api')) clean += '/api';
     return clean;
   }
 
-  // Fallback to deployed production backend on AWS Elastic Beanstalk
+  // 3. Browser running over HTTPS (e.g. Vercel deployment):
+  // Direct HTTP calls from HTTPS are strictly blocked by browser Mixed Content policy.
+  // We route via the same-origin '/api' reverse proxy (forwarded to Elastic Beanstalk via vercel.json).
+  if (isBrowser && window.location.protocol === 'https:') {
+    return `${window.location.origin}/api`;
+  }
+
+  // 4. Fallback for non-HTTPS or SSR environments
+  if (rawEnvUrl) {
+    let clean = rawEnvUrl.replace(/\/+$/, '');
+    if (!clean.endsWith('/api')) clean += '/api';
+    return clean;
+  }
+
   return 'http://sms-backend.us-east-1.elasticbeanstalk.com/api';
 };
 
 export const API_BASE_URL = getNormalizedApiBaseUrl();
-export const API_ORIGIN = API_BASE_URL.replace(/\/api$/, '');
+export const API_ORIGIN = API_BASE_URL.startsWith('http')
+  ? API_BASE_URL.replace(/\/api$/, '')
+  : (typeof window !== 'undefined' ? window.location.origin : '');
 
 const pendingRequests = new Map();
 
@@ -280,12 +295,55 @@ api.interceptors.response.use(
       }
     }
 
-    // Attach friendly timeout message
-    if (error.code === 'ECONNABORTED' || error.message?.includes('timeout') || (!error.response && error.request)) {
-      error.customMessage = 'Unable to connect to the server. Please check your internet connection and try again.';
+    // Accurate, user-friendly error classification
+    if (!error.response) {
+      const isBrowser = typeof window !== 'undefined';
+      const pageIsHttps = isBrowser && window.location.protocol === 'https:';
+      const requestUrl = String(originalRequest?.baseURL || originalRequest?.url || '');
+      const requestIsHttp = requestUrl.startsWith('http://');
+
+      if (pageIsHttps && requestIsHttp) {
+        error.customMessage = 'Secure Connection Error: The browser blocked an unencrypted HTTP request from this HTTPS page (Mixed Content). Please ensure the API is configured with HTTPS or routed through the secure proxy.';
+      } else if (error.code === 'ECONNABORTED' || error.message?.toLowerCase().includes('timeout')) {
+        error.customMessage = 'Connection timed out: The server took too long to respond. Please try again.';
+      } else if (error.message?.toLowerCase().includes('network error')) {
+        error.customMessage = 'Unable to reach the backend server. The service may be restarting, offline, or cross-origin access (CORS) is restricted.';
+      } else {
+        error.customMessage = error.message || 'Unable to connect to the server. Please check your connection and try again.';
+      }
+    } else {
+      const status = error.response.status;
+      const data = error.response.data;
+      const serverMsg = typeof data === 'string' ? data : (data?.message || data?.error || '');
+
+      if (status === 400) {
+        error.customMessage = serverMsg || 'Invalid request data. Please check your inputs.';
+      } else if (status === 401) {
+        error.customMessage = serverMsg || 'Invalid credentials or authorization failed.';
+      } else if (status === 403) {
+        error.customMessage = serverMsg || 'Access denied. You do not have permission for this resource.';
+      } else if (status === 404) {
+        error.customMessage = serverMsg || 'Requested resource or API endpoint not found.';
+      } else if (status === 408) {
+        error.customMessage = 'Request timeout on server.';
+      } else if (status === 409) {
+        error.customMessage = serverMsg || 'Conflict: Record or action already exists.';
+      } else if (status === 429) {
+        error.customMessage = 'Too many requests. Please wait a moment before trying again.';
+      } else if (status === 502) {
+        error.customMessage = 'Bad Gateway: The server proxy could not connect to the backend application.';
+      } else if (status === 503) {
+        error.customMessage = 'Service Unavailable: Backend is temporarily unavailable or restarting.';
+      } else if (status === 504) {
+        error.customMessage = 'Gateway Timeout: The backend took too long to complete the request.';
+      } else if (status >= 500) {
+        error.customMessage = serverMsg || 'Internal server error occurred. Please try again later.';
+      } else if (serverMsg) {
+        error.customMessage = serverMsg;
+      }
     }
 
-    // Other non-401 errors
+    // Other non-401 errors toast notification
     const isAuthRoute = url.includes('/auth/admin/login') || url.includes('/auth/faculty/login') || url.includes('/auth/student/login') || url.includes('/auth/login') || url.includes('/auth/verify') || url.includes('/auth/refresh');
     if (!isAuthRoute) {
       if (error.response?.status === 403) {

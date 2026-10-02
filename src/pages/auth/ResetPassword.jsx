@@ -79,7 +79,7 @@ const ResetPassword = () => {
       setOtpSent(true);
       setCountdown(60);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to send OTP. Please check the email address and try again.');
+      setError(err.response?.data?.message || err.customMessage || 'Failed to send OTP. Please check the email address and try again.');
     } finally {
       setSendingOtp(false);
     }
@@ -140,7 +140,7 @@ const ResetPassword = () => {
         navigate('/login');
       }, 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to reset password. Please check the OTP code and try again.');
+      setError(err.response?.data?.message || err.customMessage || 'Failed to reset password. Please check the OTP code and try again.');
     } finally {
       setLoading(false);
     }
