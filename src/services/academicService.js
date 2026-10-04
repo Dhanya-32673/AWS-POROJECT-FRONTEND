@@ -128,13 +128,25 @@ export const academicService = {
     return response.data;
   },
 
-  // Sections (Cached for 5 minutes)
-  getAllSections: async () => {
+  // Sections
+  getAllSections: async (forceRefresh = false) => {
     const cacheKey = '/academic/sections';
-    const cached = apiCache.get(cacheKey);
-    if (cached) return cached;
+    if (!forceRefresh) {
+      const cached = apiCache.get(cacheKey);
+      if (cached) return cached;
+    }
     const response = await api.get('/academic/sections');
-    apiCache.set(cacheKey, response.data, 300000);
+    apiCache.set(cacheKey, response.data, 60000);
+    return response.data;
+  },
+
+  getSectionStats: async () => {
+    const response = await api.get('/academic/sections/stats');
+    return response.data;
+  },
+
+  getSection: async (id) => {
+    const response = await api.get(`/academic/sections/${id}`);
     return response.data;
   },
 
@@ -150,6 +162,12 @@ export const academicService = {
     return response.data;
   },
 
+  toggleSectionStatus: async (id, active) => {
+    const response = await api.patch(`/academic/sections/${id}/status`, { active });
+    apiCache.clear('/academic/sections');
+    return response.data;
+  },
+
   deleteSection: async (id) => {
     const response = await api.delete(`/academic/sections/${id}`);
     apiCache.clear('/academic/sections');
@@ -158,6 +176,11 @@ export const academicService = {
 
   getSectionMembers: async (id) => {
     const response = await api.get(`/academic/sections/${id}/members`);
+    return response.data;
+  },
+
+  getAvailableStudents: async (id, params = {}) => {
+    const response = await api.get(`/academic/sections/${id}/available-students`, { params });
     return response.data;
   },
 
@@ -171,6 +194,24 @@ export const academicService = {
     const response = await api.delete(`/academic/sections/${id}/members/${studentId}`);
     apiCache.clear('/academic/sections');
     return response.data;
+  },
+
+  removeStudentsFromSection: async (id, studentIds) => {
+    const response = await api.post(`/academic/sections/${id}/remove-students`, studentIds);
+    apiCache.clear('/academic/sections');
+    return response.data;
+  },
+
+  exportSectionsExcel: async () => {
+    return await api.get('/academic/sections/export/excel', {
+      responseType: 'blob'
+    });
+  },
+
+  exportSectionStudentsExcel: async (id) => {
+    return await api.get(`/academic/sections/${id}/export/excel`, {
+      responseType: 'blob'
+    });
   }
 };
 

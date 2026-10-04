@@ -205,7 +205,13 @@ export const AuthProvider = ({ children }) => {
   };
 
   const facultyLogin = async (email, password) => {
-    return studentLogin(email, password);
+    setIsInactiveLoggedOut(false);
+    const data = await authService.facultyLogin(email, password);
+    const resolvedUser = data?.user || tokenUtils.getUser() || { email, role: 'FACULTY' };
+    setUser(resolvedUser);
+    tokenUtils.setUser(resolvedUser);
+    resetInactivityTimer(true);
+    return data;
   };
 
   const googleLogin = async (idToken) => {

@@ -24,6 +24,8 @@ const OAuthSuccess = () => {
       const cleanRole = role.replace('ROLE_', '').toUpperCase();
       if (cleanRole === 'FACULTY') {
         window.location.href = '/faculty/dashboard';
+      } else if (cleanRole === 'STUDENT') {
+        window.location.href = '/student/dashboard';
       } else {
         window.location.href = '/admin/dashboard';
       }

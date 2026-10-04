@@ -38,7 +38,8 @@ const CertificateTypes = lazy(() => import('./pages/admin/certificates/Certifica
 
 // Group, Section & Security Pages (Lazy loaded)
 const GroupManagement = lazy(() => import('./pages/admin/academic/GroupManagement').then(m => ({ default: m.GroupManagement })));
-const SectionManagement = lazy(() => import('./pages/admin/academic/SectionManagement').then(m => ({ default: m.SectionManagement })));
+const SectionManagement = lazy(() => import('./pages/admin/academic/SectionManagement').then(m => ({ default: m.SectionManagement || m.default })));
+const FacultyManagement = lazy(() => import('./pages/admin/faculty/FacultyManagement').then(m => ({ default: m.FacultyManagement || m.default })));
 const RoleManagement = lazy(() => import('./pages/admin/security/RoleManagement').then(m => ({ default: m.RoleManagement })));
 
 // Common User Profile Page (Lazy loaded)
@@ -210,7 +211,7 @@ function App() {
             }
           />
           <Route
-            path="/admin/academic/campus"
+            path="/admin/sections"
             element={
               <RoleRoute allowedRoles={['ADMIN']}>
                 <SectionManagement />
@@ -219,7 +220,23 @@ function App() {
           />
           <Route
             path="/admin/academic/sections"
-            element={<Navigate to="/admin/academic/campus" replace />}
+            element={
+              <RoleRoute allowedRoles={['ADMIN']}>
+                <SectionManagement />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/admin/academic/campus"
+            element={<Navigate to="/admin/sections" replace />}
+          />
+          <Route
+            path="/admin/faculty"
+            element={
+              <RoleRoute allowedRoles={['ADMIN']}>
+                <FacultyManagement />
+              </RoleRoute>
+            }
           />
 
           {/* Security Management Routes */}

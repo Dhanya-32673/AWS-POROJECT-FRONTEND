@@ -14,7 +14,8 @@ import {
   ArrowRight, 
   AlertCircle, 
   CheckCircle2, 
-  UserCheck 
+  UserCheck,
+  GraduationCap
 } from "lucide-react";
 import { API_ORIGIN, getNormalizedApiBaseUrl } from "../../services/api";
 import { toast as hotToast } from "react-hot-toast";
@@ -66,13 +67,15 @@ const Login = () => {
       else if (user.role?.name) rawRole = user.role.name;
 
       const role = rawRole.replace("ROLE_", "").toUpperCase();
-      if (role === "STUDENT" || role === "FACULTY") {
+      if (role === "FACULTY") {
+        navigate("/faculty/dashboard", { replace: true });
+      } else if (role === "STUDENT") {
         if (user.mustChangePassword) {
           navigate("/student/change-password", { replace: true });
         } else {
           navigate("/student/dashboard", { replace: true });
         }
-      } else if (role === "ADMIN") {
+      } else if (role === "ADMIN" || role === "SUPER_ADMIN") {
         navigate("/admin/dashboard", { replace: true });
       }
     }
@@ -82,7 +85,9 @@ const Login = () => {
     const errors = {};
     const cleanEmail = email.trim();
     if (!cleanEmail) {
-      errors.email = "Email address is required";
+      errors.email = roleTab === "FACULTY" 
+        ? "Email address or 4-digit Faculty ID is required" 
+        : "Email address is required";
     }
     if (!password) {
       errors.password = "Password is required";
@@ -111,9 +116,12 @@ const Login = () => {
         setEmail(targetEmail);
         setStep("OTP");
         setSuccessMsg(response?.message || "OTP sent successfully to " + targetEmail);
+      } else if (roleTab === "FACULTY") {
+        await facultyLogin(cleanEmail, password);
+        setSuccessMsg("Faculty login successful. Redirecting to portal...");
+        navigate("/faculty/dashboard", { replace: true });
       } else {
-        const loginFn = studentLogin || facultyLogin;
-        const response = await loginFn(cleanEmail, password);
+        const response = await studentLogin(cleanEmail, password);
         const targetUser = response?.user || tokenUtils.getUser() || { email: cleanEmail, role: 'STUDENT' };
         if (targetUser?.mustChangePassword) {
           setSuccessMsg("Initial login detected. Redirecting to password change...");
@@ -135,8 +143,11 @@ const Login = () => {
   // Google OAuth Redirect
   const handleGoogleSignIn = () => {
     setError("");
-    const origin = (getNormalizedApiBaseUrl() || API_ORIGIN).replace(/\/api$/, '');
-    window.location.href = `${origin}/oauth2/authorization/google`;
+    let backendOrigin = (getNormalizedApiBaseUrl() || API_ORIGIN).replace(/\/api$/, '');
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      backendOrigin = 'http://localhost:8080';
+    }
+    window.location.href = `${backendOrigin}/oauth2/authorization/google`;
   };
 
   const handleBackToLogin = () => {
@@ -173,12 +184,12 @@ const Login = () => {
 
   return (
     <AuthLayout
-      title={roleTab === "ADMIN" ? "Admin Portal" : "Student Portal"}
+      title={roleTab === "ADMIN" ? "Admin Portal" : roleTab === "FACULTY" ? "Faculty Portal" : "Student Portal"}
       subtitle="Student Management System"
     >
       <div className="w-full max-w-[430px] mx-auto space-y-3.5 my-auto px-1 sm:px-0">
         
-        {/* Tab Switcher */}
+        {/* Tab Switcher: Admin | Faculty | Student */}
         <div className="bg-[#f1f5f9] rounded-[14px] p-1 flex h-[48px] w-full border border-slate-200/80 text-xs font-bold shrink-0">
           <button
             type="button"
@@ -195,8 +206,26 @@ const Login = () => {
                 : "text-slate-500 hover:text-slate-900"
             )}
           >
-            <ShieldCheck className="w-3.5 h-3.5" /> 
+            <ShieldCheck className="w-3.5 h-3.5 shrink-0" /> 
             <span>Admin (OTP)</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              hotToast.dismiss();
+              setRoleTab("FACULTY");
+              setError("");
+              setSuccessMsg("");
+              setFieldErrors({});
+            }}
+            className={"flex-1 py-2 rounded-[10px] transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer " + (
+              roleTab === "FACULTY"
+                ? "bg-gradient-to-r from-[#2563eb] to-[#3b82f6] text-white shadow-xs font-bold"
+                : "text-slate-500 hover:text-slate-900"
+            )}
+          >
+            <GraduationCap className="w-3.5 h-3.5 shrink-0" /> 
+            <span>Faculty</span>
           </button>
           <button
             type="button"
@@ -213,12 +242,12 @@ const Login = () => {
                 : "text-slate-500 hover:text-slate-900"
             )}
           >
-            <UserCheck className="w-3.5 h-3.5" /> 
+            <UserCheck className="w-3.5 h-3.5 shrink-0" /> 
             <span>Student (Direct)</span>
           </button>
         </div>
 
-        {/* Center Shield Icon */}
+        {/* Center Shield/Portal Icon */}
         <div className="text-center pt-0.5">
           <motion.div
             animate={{ y: [-3, 3, -3] }}
@@ -227,6 +256,8 @@ const Login = () => {
           >
             {roleTab === "ADMIN" ? (
               <ShieldCheck className="w-8 h-8 sm:w-9 sm:h-9 text-[#2563eb]" />
+            ) : roleTab === "FACULTY" ? (
+              <GraduationCap className="w-8 h-8 sm:w-9 sm:h-9 text-[#2563eb]" />
             ) : (
               <UserCheck className="w-8 h-8 sm:w-9 sm:h-9 text-[#2563eb]" />
             )}
@@ -234,10 +265,14 @@ const Login = () => {
 
           {/* Page Title & Subtitle */}
           <h2 className="text-2xl sm:text-[26px] font-black text-slate-900 tracking-tight mt-2">
-            {roleTab === "ADMIN" ? "Admin Sign In" : "Student Sign In"}
+            {roleTab === "ADMIN" ? "Admin Sign In" : roleTab === "FACULTY" ? "Faculty Sign In" : "Student Sign In"}
           </h2>
-          <p className="text-slate-500 text-xs sm:text-sm font-medium max-w-[320px] mx-auto mt-0.5">
-            {roleTab === "ADMIN" ? "Enter your credentials to receive an email OTP" : "Enter your credentials to access your student portal"}
+          <p className="text-slate-500 text-xs sm:text-sm font-medium max-w-[340px] mx-auto mt-0.5">
+            {roleTab === "ADMIN" 
+              ? "Enter your credentials to receive an email OTP" 
+              : roleTab === "FACULTY" 
+                ? "Enter your email or 4-digit Faculty ID to sign in" 
+                : "Enter your credentials to access your student portal"}
           </p>
         </div>
 
@@ -263,25 +298,31 @@ const Login = () => {
           </div>
         )}
 
-        {/* Form Fields - Inputs use font-size 16px (text-base) on mobile to prevent iOS Safari auto-zoom */}
+        {/* Form Fields */}
         <form className="space-y-3" onSubmit={handleCredentialSubmit}>
           <div>
             <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Email Address
+              {roleTab === "FACULTY" ? "Email Address or Faculty ID (4 Digits)" : "Email Address"}
             </label>
             <div className={"h-[48px] sm:h-[50px] bg-white border " + (
               fieldErrors.email ? "border-red-500 focus-within:ring-red-500" : "border-slate-200 focus-within:border-[#2563eb] focus-within:ring-2 focus-within:ring-[#2563eb]/15"
             ) + " rounded-[12px] flex items-center px-3.5 gap-2.5 transition-all duration-200"}>
               <Mail className="w-4.5 h-4.5 text-slate-400 shrink-0" />
               <input
-                type="email"
-                autoComplete="email"
+                type={roleTab === "FACULTY" ? "text" : "email"}
+                autoComplete={roleTab === "FACULTY" ? "username" : "email"}
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
                   if (fieldErrors.email) setFieldErrors({ ...fieldErrors, email: "" });
                 }}
-                placeholder="Enter your registered email"
+                placeholder={
+                  roleTab === "FACULTY"
+                    ? "e.g. 2555 or faculty@gmail.com"
+                    : roleTab === "STUDENT"
+                      ? "e.g. student@bhashyam.edu"
+                      : "Enter your registered email"
+                }
                 className="w-full bg-transparent text-slate-900 font-semibold text-base sm:text-sm placeholder-slate-400 focus:outline-none"
               />
             </div>
@@ -325,7 +366,7 @@ const Login = () => {
 
           <div className="flex items-center justify-end pt-0.5">
             <Link
-              to="/reset-password?mode=student"
+              to={roleTab === "FACULTY" ? "/reset-password?mode=faculty" : "/reset-password?mode=student"}
               className="text-xs font-bold text-[#2563eb] hover:underline transition-colors"
             >
               Forgot password?
@@ -337,7 +378,11 @@ const Login = () => {
             type="submit"
             disabled={loading}
             aria-busy={loading}
-            aria-label={loading ? (roleTab === "ADMIN" ? "Sending login OTP" : "Signing in as Student") : (roleTab === "ADMIN" ? "Send Login OTP" : "Sign in as Student")}
+            aria-label={
+              loading 
+                ? (roleTab === "ADMIN" ? "Sending login OTP" : roleTab === "FACULTY" ? "Signing in as Faculty" : "Signing in as Student")
+                : (roleTab === "ADMIN" ? "Send Login OTP" : roleTab === "FACULTY" ? "Sign in as Faculty" : "Sign in as Student")
+            }
             whileHover={{ scale: loading ? 1 : 1.01 }}
             whileTap={{ scale: loading ? 1 : 0.98 }}
             className="w-full min-h-[48px] sm:min-h-[50px] rounded-[12px] text-white font-bold text-xs sm:text-sm bg-gradient-to-r from-[#2563eb] to-[#3b82f6] hover:from-blue-700 hover:to-blue-600 shadow-[0_10px_24px_rgba(37,99,235,0.22)] transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-70 disabled:cursor-not-allowed mt-3"
@@ -345,11 +390,19 @@ const Login = () => {
             {loading ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin shrink-0" />
-                <span className="font-semibold">{roleTab === "ADMIN" ? "Sending OTP..." : "Signing in..."}</span>
+                <span className="font-semibold">
+                  {roleTab === "ADMIN" ? "Sending OTP..." : "Signing in..."}
+                </span>
               </div>
             ) : (
               <>
-                <span>{roleTab === "ADMIN" ? "Send Login OTP" : "Sign in as Student"}</span>
+                <span>
+                  {roleTab === "ADMIN" 
+                    ? "Send Login OTP" 
+                    : roleTab === "FACULTY" 
+                      ? "Sign in as Faculty" 
+                      : "Sign in as Student"}
+                </span>
                 <ArrowRight className="w-4 h-4 shrink-0" />
               </>
             )}

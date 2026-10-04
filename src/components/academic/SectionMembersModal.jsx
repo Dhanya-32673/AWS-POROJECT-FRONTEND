@@ -1,53 +1,87 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Users, UserPlus, Eye, X, AlertCircle, UserX, Building2 } from 'lucide-react';
+import { 
+  Users, UserPlus, Eye, X, AlertCircle, UserX, Download, 
+  Search, ChevronLeft, ChevronRight, CheckCircle2, Layers 
+} from 'lucide-react';
 import { academicService } from '../../services/academicService';
 import { formatBranchGroup, formatIntermediateYear } from '../../utils/studentDataFormatter';
-import AssignStudentsModal from './AssignStudentsModal';
 import DeleteConfirmationModal from '../common/DeleteConfirmationModal';
+import { useToast } from '../../context/ToastContext';
 
-export const SectionMembersModal = (props) => {
-  const { onClose, onUpdated, isAdmin = true } = props;
-  const campus = props.campus || props.section;
+export const SectionMembersModal = ({ section, onClose, onUpdated, onOpenAssignModal }) => {
   const navigate = useNavigate();
+  const { showSuccess, showError } = useToast();
 
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [showAssignModal, setShowAssignModal] = useState(false);
-  const [studentToRemove, setStudentToRemove] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Selection and actions
   const [selectedIds, setSelectedIds] = useState([]);
-  const [removing, setRemoving] = useState(false);
-  const [bulkUnassigning, setBulkUnassigning] = useState(false);
+  const [studentToRemove, setStudentToRemove] = useState(null);
   const [showBulkUnassignConfirm, setShowBulkUnassignConfirm] = useState(false);
-  const [successMessage, setSuccessMessage] = useState('');
+  const [removing, setRemoving] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
-  const targetCampusId = campus?.id || campus?.campusId;
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 8;
+
+  const sectionId = section?.id;
+  const sectionName = section?.name || section?.sectionName || 'Section';
+  const group = section?.branchGroup || section?.group || 'General';
+  const year = section?.intermediateYear || section?.year || '1st Year';
+  const academicYear = section?.academicYear || '2026-2027';
+  const capacity = section?.capacity || 60;
 
   useEffect(() => {
     fetchMembers();
-  }, [campus]);
+  }, [sectionId]);
 
   const fetchMembers = async () => {
-    if (!targetCampusId) return;
+    if (!sectionId) return;
     setLoading(true);
     setError('');
     try {
-      const data = await academicService.getCampusStudents(targetCampusId);
-      setMembers(data || []);
+      const data = await academicService.getSectionMembers(sectionId);
+      setMembers(Array.isArray(data) ? data : []);
       setSelectedIds([]);
+      setCurrentPage(1);
     } catch (err) {
-      console.error('Failed to load campus students:', err);
-      const msg = err.response?.data?.message || err.message || 'Failed to load campus students';
+      console.error('Failed to load section members:', err);
+      const msg = err.response?.data?.message || err.message || 'Failed to load section members';
       setError(msg);
     } finally {
       setLoading(false);
     }
   };
 
+  // Filtered members by search
+  const filteredMembers = useMemo(() => {
+    if (!searchQuery.trim()) return members;
+    const q = searchQuery.toLowerCase().trim();
+    return members.filter((m) => {
+      const name = (m.fullName || m.name || '').toLowerCase();
+      const sId = (m.studentId || '').toLowerCase();
+      const adm = (m.admissionNumber || '').toLowerCase();
+      const email = (m.emailAddress1 || m.email || '').toLowerCase();
+      return name.includes(q) || sId.includes(q) || adm.includes(q) || email.includes(q);
+    });
+  }, [members, searchQuery]);
+
+  // Paginated members
+  const totalPages = Math.ceil(filteredMembers.length / pageSize) || 1;
+  const paginatedMembers = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredMembers.slice(start, start + pageSize);
+  }, [filteredMembers, currentPage, pageSize]);
+
+  // Selection handlers
   const handleSelectAll = (e) => {
     if (e.target.checked) {
-      setSelectedIds(members.map((m) => m.studentId || m.id));
+      setSelectedIds(filteredMembers.map((m) => m.studentId || m.id));
     } else {
       setSelectedIds([]);
     }
@@ -59,335 +93,383 @@ export const SectionMembersModal = (props) => {
     );
   };
 
-  const handleBulkUnassign = () => {
-    if (selectedIds.length === 0 || bulkUnassigning) return;
-    setShowBulkUnassignConfirm(true);
-  };
-
-  const handleBulkUnassignConfirmed = async () => {
-    setShowBulkUnassignConfirm(false);
-    setBulkUnassigning(true);
-    setError('');
-    setSuccessMessage('');
-    try {
-      await academicService.removeStudentsFromCampus(targetCampusId, selectedIds);
-      setSuccessMessage(`${selectedIds.length} student(s) unassigned from ${campus?.name || 'campus'} successfully.`);
-      setSelectedIds([]);
-      await fetchMembers();
-      if (onUpdated) onUpdated();
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
-    } catch (err) {
-      console.error('Failed bulk unassigning students:', err);
-      setError(err.response?.data?.message || err.response?.data || err.message || 'Failed to unassign selected students');
-    } finally {
-      setBulkUnassigning(false);
-    }
-  };
-
-  const handleConfirmRemoveStudent = async () => {
+  // Single remove
+  const handleConfirmRemoveSingle = async () => {
     if (!studentToRemove || removing) return;
-
     setRemoving(true);
     try {
-      const studentName = studentToRemove.fullName || studentToRemove.name || 'Student';
       const targetId = studentToRemove.studentId || studentToRemove.id;
-      await academicService.removeStudentFromCampus(targetCampusId, targetId);
-      setSuccessMessage(`${studentName} unassigned from ${campus?.name || 'campus'} successfully.`);
+      const sName = studentToRemove.fullName || studentToRemove.name || 'Student';
+      await academicService.removeStudentFromSection(sectionId, targetId);
+      showSuccess(`${sName} removed from ${sectionName}.`);
       setStudentToRemove(null);
       await fetchMembers();
       if (onUpdated) onUpdated();
-      setTimeout(() => {
-        setSuccessMessage('');
-      }, 3000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to remove student from campus');
+      console.error('Failed to remove student from section:', err);
+      showError(err.response?.data?.message || err.message || 'Failed to remove student');
     } finally {
       setRemoving(false);
     }
   };
 
-  const isAllSelected = members.length > 0 && selectedIds.length === members.length;
+  // Bulk remove
+  const handleConfirmBulkRemove = async () => {
+    if (selectedIds.length === 0 || removing) return;
+    setRemoving(true);
+    setShowBulkUnassignConfirm(false);
+    try {
+      await academicService.removeStudentsFromSection(sectionId, selectedIds);
+      showSuccess(`${selectedIds.length} student(s) unassigned from ${sectionName}.`);
+      setSelectedIds([]);
+      await fetchMembers();
+      if (onUpdated) onUpdated();
+    } catch (err) {
+      console.error('Failed bulk removing students:', err);
+      showError(err.response?.data?.message || err.message || 'Failed to unassign selected students');
+    } finally {
+      setRemoving(false);
+    }
+  };
+
+  // Export to Excel
+  const handleExportExcel = async () => {
+    setExporting(true);
+    try {
+      const response = await academicService.exportSectionStudentsExcel(sectionId);
+      const blob = new Blob([response.data], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = downloadUrl;
+      link.setAttribute('download', `${sectionName.replace(/\s+/g, '_')}_Students.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(downloadUrl);
+      showSuccess(`Exported ${sectionName} students to Excel.`);
+    } catch (err) {
+      console.error('Backend Excel export failed, creating CSV fallback:', err);
+      try {
+        // Fallback: Client-side CSV
+        const headers = ["Student ID", "Full Name", "Admission Number", "Group", "Year", "Academic Year", "Mobile", "Email", "Status"];
+        const rows = members.map(m => [
+          `"${m.studentId || ''}"`,
+          `"${m.fullName || ''}"`,
+          `"${m.admissionNumber || ''}"`,
+          `"${m.branchGroup || ''}"`,
+          `"${m.intermediateYear || ''}"`,
+          `"${m.academicYear || ''}"`,
+          `"${m.mobileNumber || ''}"`,
+          `"${m.emailAddress1 || ''}"`,
+          `"${m.status || 'ACTIVE'}"`
+        ]);
+        const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `${sectionName.replace(/\s+/g, '_')}_Students.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showSuccess(`Exported ${sectionName} students successfully.`);
+      } catch (fallbackErr) {
+        showError('Failed to export students');
+      }
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const assignedCount = members.length;
+  const capacityPct = capacity > 0 ? Math.min(100, Math.round((assignedCount / capacity) * 100)) : 0;
+  const capacityColor = capacityPct >= 100 ? 'text-rose-600 bg-rose-50 border-rose-200' : capacityPct >= 80 ? 'text-amber-600 bg-amber-50 border-amber-200' : 'text-blue-600 bg-blue-50 border-blue-200';
 
   return (
-    <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-fadeIn font-sans">
-        <div className="bg-white dark:bg-slate-900 w-[calc(100%-16px)] sm:w-full max-w-5xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[90vh]">
-          {/* Header */}
-          <div className="p-4 sm:p-6 pb-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/50 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-sm shrink-0">
-                <Building2 className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base font-extrabold text-slate-900 dark:text-white">
-                  Campus {campus?.name} Students
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {campus?.code || campus?.name} • {loading ? 'Loading...' : error ? 'Error loading' : `${members.length} ${members.length === 1 ? 'Student' : 'Students'} Enrolled`}
-                </p>
-              </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-sm animate-fadeIn">
+      <div className="bg-white dark:bg-slate-900 w-full max-w-4xl rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col max-h-[92vh]">
+        
+        {/* Modal Top Header */}
+        <div className="p-4 sm:p-6 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/60 dark:bg-slate-950/40">
+          <div className="flex items-start sm:items-center space-x-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg shadow-blue-500/20 shrink-0">
+              <Layers className="w-6 h-6" />
             </div>
-
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
-              {isAdmin && (
-                <>
-                  {selectedIds.length > 0 && (
-                    <button
-                      onClick={handleBulkUnassign}
-                      disabled={bulkUnassigning}
-                      className="flex-1 sm:flex-none py-2.5 px-3 text-xs font-bold text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/40 hover:bg-rose-100 border border-rose-200 dark:border-rose-900/50 rounded-xl transition inline-flex items-center justify-center space-x-1.5 cursor-pointer disabled:opacity-50 min-h-[44px]"
-                    >
-                      <UserX className="w-4 h-4" />
-                      <span>Unassign ({selectedIds.length})</span>
-                    </button>
-                  )}
-                  <button
-                    onClick={() => setShowAssignModal(true)}
-                    className="flex-1 sm:flex-none py-2.5 px-3.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-500/20 transition inline-flex items-center justify-center space-x-1.5 cursor-pointer min-h-[44px]"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    <span>+ Assign Students</span>
-                  </button>
-                </>
-              )}
-              <button
-                onClick={onClose}
-                aria-label="Close modal"
-                className="p-2.5 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer min-w-[44px] min-h-[44px] flex items-center justify-center"
-              >
-                <X className="w-5 h-5" />
-              </button>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                  {sectionName}
+                </h2>
+                <span className={`px-2.5 py-0.5 text-xs font-black rounded-lg border ${capacityColor}`}>
+                  {assignedCount} / {capacity} Students ({capacityPct}%)
+                </span>
+                <span className={`px-2 py-0.5 text-[11px] font-extrabold rounded-lg ${section?.active !== false ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600'}`}>
+                  {section?.active !== false ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 flex flex-wrap items-center gap-2">
+                <span><strong>Group:</strong> {formatBranchGroup(group)}</span>
+                <span>•</span>
+                <span><strong>Year:</strong> {formatIntermediateYear(year)}</span>
+                <span>•</span>
+                <span><strong>Academic Year:</strong> {academicYear}</span>
+              </p>
             </div>
           </div>
 
-          {/* Content Area */}
-          <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-            {error && (
-              <div className="mb-4 p-3.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 text-xs text-rose-700 dark:text-rose-300 flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
-                  <span>{error}</span>
-                </div>
+          <div className="flex items-center gap-2 self-end sm:self-center">
+            <button
+              onClick={handleExportExcel}
+              disabled={exporting || members.length === 0}
+              className="px-3 py-2 text-xs font-bold text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 rounded-xl transition flex items-center space-x-1.5 cursor-pointer shadow-xs disabled:opacity-50"
+              title="Export section students to Excel"
+            >
+              <Download className="w-3.5 h-3.5 text-blue-600" />
+              <span>{exporting ? 'Exporting...' : 'Export'}</span>
+            </button>
+
+            {onOpenAssignModal && (
+              <button
+                onClick={() => {
+                  onClose();
+                  onOpenAssignModal(section);
+                }}
+                disabled={assignedCount >= capacity}
+                className="px-3.5 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Assign Students</span>
+              </button>
+            )}
+
+            <button
+              onClick={onClose}
+              className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Search Bar & Actions Ribbon */}
+        <div className="p-4 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-white dark:bg-slate-900">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search students by name, ID, or admission..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-600/20 focus:border-blue-600 transition"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            {selectedIds.length > 0 && (
+              <button
+                onClick={() => setShowBulkUnassignConfirm(true)}
+                disabled={removing}
+                className="px-3 py-1.5 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 hover:bg-rose-100 rounded-xl transition flex items-center space-x-1.5 cursor-pointer"
+              >
+                <UserX className="w-3.5 h-3.5" />
+                <span>Remove Selected ({selectedIds.length})</span>
+              </button>
+            )}
+            <span className="text-xs text-slate-500 font-semibold">
+              Showing {filteredMembers.length} {filteredMembers.length === 1 ? 'student' : 'students'}
+            </span>
+          </div>
+        </div>
+
+        {/* Content Table */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 scrollbar-thin">
+          {loading ? (
+            <div className="py-16 flex flex-col items-center justify-center space-y-3">
+              <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs font-bold text-slate-500">Loading section members...</p>
+            </div>
+          ) : error ? (
+            <div className="p-4 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 text-rose-700 dark:text-rose-400 rounded-2xl flex items-center justify-between">
+              <div className="flex items-center space-x-2 text-xs font-bold">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{error}</span>
+              </div>
+              <button
+                onClick={fetchMembers}
+                className="text-xs font-extrabold underline hover:text-rose-900 cursor-pointer"
+              >
+                Retry
+              </button>
+            </div>
+          ) : filteredMembers.length === 0 ? (
+            <div className="py-16 text-center space-y-3">
+              <div className="w-16 h-16 bg-blue-50 dark:bg-slate-800 text-blue-600 rounded-3xl mx-auto flex items-center justify-center">
+                <Users className="w-8 h-8 opacity-60" />
+              </div>
+              <h3 className="text-sm font-black text-slate-800 dark:text-slate-200">
+                {searchQuery ? 'No matching students found' : 'No students assigned yet'}
+              </h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                {searchQuery
+                  ? 'Try adjusting your search criteria.'
+                  : `Assign eligible ${formatBranchGroup(group)} students to ${sectionName}.`}
+              </p>
+              {!searchQuery && onOpenAssignModal && (
                 <button
-                  onClick={fetchMembers}
-                  className="px-3 py-1.5 bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-200 rounded-lg text-xs font-bold hover:bg-rose-200 transition cursor-pointer"
+                  onClick={() => {
+                    onClose();
+                    onOpenAssignModal(section);
+                  }}
+                  className="mt-2 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl shadow-md transition cursor-pointer inline-flex items-center space-x-1.5"
                 >
-                  Retry
+                  <UserPlus className="w-4 h-4" />
+                  <span>Assign Students Now</span>
                 </button>
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="mb-4 p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-900/50 text-xs text-emerald-700 dark:text-emerald-300 font-bold flex items-center gap-2 animate-fadeIn">
-                <span className="w-4 h-4 text-emerald-600 shrink-0">✓</span>
-                <span>{successMessage}</span>
-              </div>
-            )}
-
-            {loading ? (
-              <div className="p-12 text-center text-xs text-slate-400">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-600 border-t-transparent mb-2" />
-                <p className="font-bold">Loading campus students...</p>
-              </div>
-            ) : !error && members.length === 0 ? (
-              <div className="p-12 text-center space-y-3">
-                <Users className="w-10 h-10 mx-auto text-slate-300 dark:text-slate-600" />
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400">
-                  No students currently assigned to Campus {campus?.name}
-                </p>
-                {isAdmin && (
-                  <button
-                    onClick={() => setShowAssignModal(true)}
-                    className="py-2.5 px-4 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 rounded-xl border border-blue-200 dark:border-blue-800 transition inline-flex items-center space-x-1.5 cursor-pointer min-h-[44px]"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    <span>Assign First Student</span>
-                  </button>
-                )}
-              </div>
-            ) : (
-              <>
-                {/* Mobile Stacked Card View (< md) */}
-                <div className="block md:hidden divide-y divide-slate-100 dark:divide-slate-800">
-                  {members.map((student) => {
-                    const sid = student.studentId || student.id;
-                    const isSelected = selectedIds.includes(sid);
+              )}
+            </div>
+          ) : (
+            <div className="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="bg-slate-50 dark:bg-slate-800/70 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase tracking-wider text-[10px] font-black">
+                    <th className="py-3 px-3.5 w-10 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.length === filteredMembers.length && filteredMembers.length > 0}
+                        onChange={handleSelectAll}
+                        className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer w-3.5 h-3.5"
+                      />
+                    </th>
+                    <th className="py-3 px-3.5">Student ID</th>
+                    <th className="py-3 px-3.5">Student Name</th>
+                    <th className="py-3 px-3.5">Admission No.</th>
+                    <th className="py-3 px-3.5">Group / Stream</th>
+                    <th className="py-3 px-3.5">Academic Year</th>
+                    <th className="py-3 px-3.5 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  {paginatedMembers.map((student) => {
+                    const sId = student.studentId || student.id;
+                    const isSelected = selectedIds.includes(sId);
                     return (
-                      <div key={sid} className={`p-3.5 space-y-2 rounded-2xl transition ${isSelected ? 'bg-blue-50/50 dark:bg-blue-950/30' : ''}`}>
-                        <div className="flex items-start justify-between gap-3">
-                          <div className="flex items-center space-x-2.5 min-w-0">
-                            {isAdmin && (
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() => handleToggleSelect(sid)}
-                                className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer shrink-0"
-                              />
-                            )}
-                            <div className="min-w-0">
-                              <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">{student.fullName || student.name}</h4>
-                              <p className="text-[11px] font-mono text-blue-600 dark:text-blue-400 font-bold">{student.studentId}</p>
-                              <p className="text-[10px] text-slate-400">Adm: {student.admissionNumber || student.rollNumber || '—'}</p>
-                            </div>
+                      <tr
+                        key={sId}
+                        className={`hover:bg-blue-50/40 dark:hover:bg-slate-800/40 transition-colors ${
+                          isSelected ? 'bg-blue-50/70 dark:bg-blue-950/30' : ''
+                        }`}
+                      >
+                        <td className="py-3 px-3.5 text-center">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleToggleSelect(sId)}
+                            className="rounded text-blue-600 focus:ring-blue-500 cursor-pointer w-3.5 h-3.5"
+                          />
+                        </td>
+                        <td className="py-3 px-3.5 font-mono font-bold text-blue-600 dark:text-blue-400">
+                          {student.studentId || 'N/A'}
+                        </td>
+                        <td className="py-3 px-3.5">
+                          <div className="font-extrabold text-slate-900 dark:text-white">
+                            {student.fullName || 'Student'}
                           </div>
-                          <span className={`px-2 py-0.5 rounded-full text-[9px] font-extrabold uppercase ${
-                            student.status === 'ACTIVE'
-                              ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300'
-                              : 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300'
-                          }`}>
-                            {student.status || 'ACTIVE'}
+                          {student.emailAddress1 && (
+                            <div className="text-[11px] text-slate-500 truncate max-w-xs">
+                              {student.emailAddress1}
+                            </div>
+                          )}
+                        </td>
+                        <td className="py-3 px-3.5 font-semibold text-slate-600 dark:text-slate-300">
+                          {student.admissionNumber || '—'}
+                        </td>
+                        <td className="py-3 px-3.5">
+                          <span className="px-2 py-0.5 bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 rounded-md font-bold text-[11px]">
+                            {student.branchGroup || group}
                           </span>
-                        </div>
-
-                        <div className="flex items-center justify-end gap-1.5 pt-1">
-                          <button
-                            onClick={() => {
-                              onClose();
-                              navigate(`/admin/students/${student.studentId}`);
-                            }}
-                            className="p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
-                            title="View Profile"
-                            aria-label="View Profile"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-                          {isAdmin && (
+                        </td>
+                        <td className="py-3 px-3.5 text-slate-600 dark:text-slate-400">
+                          {student.academicYear || academicYear}
+                        </td>
+                        <td className="py-3 px-3.5 text-right">
+                          <div className="flex items-center justify-end space-x-1.5">
+                            <button
+                              onClick={() => {
+                                onClose();
+                                navigate(`/admin/students/${student.studentId || student.id}`);
+                              }}
+                              className="p-1.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-slate-800 rounded-lg transition"
+                              title="View Student Profile"
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
                             <button
                               onClick={() => setStudentToRemove(student)}
-                              className="p-2 rounded-xl text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/40 min-h-[44px] min-w-[44px] flex items-center justify-center cursor-pointer"
-                              title="Unassign from Campus"
-                              aria-label="Unassign Student"
+                              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition"
+                              title="Remove from Section"
                             >
                               <UserX className="w-4 h-4" />
                             </button>
-                          )}
-                        </div>
-                      </div>
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })}
-                </div>
-
-                {/* Desktop Table View (md+) */}
-                <div className="hidden md:block border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
-                  <table className="w-full text-left text-xs border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[11px] font-extrabold uppercase text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                        {isAdmin && (
-                          <th className="p-3.5 px-4 w-10">
-                            <input
-                              type="checkbox"
-                              checked={isAllSelected}
-                              onChange={handleSelectAll}
-                              className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
-                            />
-                          </th>
-                        )}
-                        <th className="p-3.5 px-4">Student ID</th>
-                        <th className="p-3.5">Admission No</th>
-                        <th className="p-3.5">Student Name</th>
-                        <th className="p-3.5">Group</th>
-                        <th className="p-3.5">Academic Year</th>
-                        <th className="p-3.5">Status</th>
-                        <th className="p-3.5 text-right pr-4">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-slate-700 dark:text-slate-300">
-                      {members.map((student) => {
-                        const sid = student.studentId || student.id;
-                        const isSelected = selectedIds.includes(sid);
-                        return (
-                          <tr key={sid} className={`hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition ${isSelected ? 'bg-blue-50/40 dark:bg-blue-950/20' : ''}`}>
-                            {isAdmin && (
-                              <td className="p-3.5 px-4">
-                                <input
-                                  type="checkbox"
-                                  checked={isSelected}
-                                  onChange={() => handleToggleSelect(sid)}
-                                  className="w-4 h-4 rounded text-blue-600 border-slate-300 focus:ring-blue-500 cursor-pointer"
-                                />
-                              </td>
-                            )}
-                            <td className="p-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">{student.studentId}</td>
-                            <td className="p-3.5 font-medium">{student.admissionNumber || student.rollNumber || '—'}</td>
-                            <td className="p-3.5 font-bold text-slate-900 dark:text-white">{student.fullName || student.name}</td>
-                            <td className="p-3.5 font-semibold text-slate-600 dark:text-slate-400">{formatBranchGroup(student.branchGroup)}</td>
-                            <td className="p-3.5 text-slate-500">{student.academicYear || formatIntermediateYear(student.intermediateYear)}</td>
-                            <td className="p-3.5">
-                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
-                                student.status === 'ACTIVE'
-                                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400'
-                                  : 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-400'
-                              }`}>
-                                {student.status || 'ACTIVE'}
-                              </span>
-                            </td>
-                            <td className="p-3.5 pr-4 text-right space-x-1.5 whitespace-nowrap">
-                              <button
-                                onClick={() => {
-                                  onClose();
-                                  navigate(`/admin/students/${student.studentId}`);
-                                }}
-                                title="View Student Profile"
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition inline-flex items-center cursor-pointer min-w-[32px] min-h-[32px]"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-
-                              {isAdmin && (
-                                <button
-                                  onClick={() => setStudentToRemove(student)}
-                                  title="Unassign Student from Campus"
-                                  className="p-1.5 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-950/50 transition inline-flex items-center cursor-pointer min-w-[32px] min-h-[32px]"
-                                >
-                                  <UserX className="w-4 h-4" />
-                                </button>
-                              )}
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            )}
-          </div>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
+
+        {/* Pagination & Footer */}
+        {totalPages > 1 && !loading && (
+          <div className="p-3 sm:p-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-950/40">
+            <div className="text-xs text-slate-500 font-semibold">
+              Page {currentPage} of {totalPages} ({filteredMembers.length} students)
+            </div>
+            <div className="flex items-center space-x-1.5">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 transition cursor-pointer"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+                className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-white dark:hover:bg-slate-800 disabled:opacity-40 transition cursor-pointer"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+
       </div>
 
-      {/* Assign Students Modal */}
-      {showAssignModal && (
-        <AssignStudentsModal
-          campus={campus}
-          onClose={() => setShowAssignModal(false)}
-          onAssigned={() => {
-            fetchMembers();
-            if (onUpdated) onUpdated();
-          }}
-        />
-      )}
-
-      {/* Unassign Single Student Confirmation Modal */}
+      {/* Single Unassign Confirmation Modal */}
       {studentToRemove && (
         <DeleteConfirmationModal
           isOpen={!!studentToRemove}
-          title={`Unassign Student from Campus ${campus?.name || ''}`}
-          subtitle="Campus Allocation Removal"
-          entityDetails={[
-            { label: 'Student Name', value: studentToRemove.fullName || studentToRemove.name },
-            { label: 'Student ID', value: studentToRemove.studentId },
-            { label: 'Current Campus', value: campus?.name || 'Assigned Campus' },
-          ]}
-          warningList={[
-            'Removes this student from this campus roster',
-            'Student record itself is NOT deleted and remains active in Student Directory',
-          ]}
-          dangerButtonText="Unassign Student"
-          loading={removing}
           onClose={() => setStudentToRemove(null)}
-          onConfirm={handleConfirmRemoveStudent}
+          onConfirm={handleConfirmRemoveSingle}
+          title="Remove Student from Section?"
+          message={`Are you sure you want to remove ${studentToRemove.fullName || 'this student'} from ${sectionName}? The student will be set to 'Unassigned' and their record will remain intact.`}
+          confirmText={removing ? "Removing..." : "Remove from Section"}
+          confirmVariant="danger"
         />
       )}
 
@@ -395,25 +477,16 @@ export const SectionMembersModal = (props) => {
       {showBulkUnassignConfirm && (
         <DeleteConfirmationModal
           isOpen={showBulkUnassignConfirm}
-          title={`Unassign ${selectedIds.length} Students`}
-          subtitle="Bulk Campus Removal"
-          entityDetails={[
-            { label: 'Campus', value: campus?.name || 'Campus' },
-            { label: 'Selected Students', value: `${selectedIds.length} student(s)` },
-          ]}
-          warningList={[
-            'Removes all selected students from Campus ' + (campus?.name || ''),
-            'Students will remain active in the college directory',
-          ]}
-          dangerButtonText="Unassign Selected"
-          loading={bulkUnassigning}
           onClose={() => setShowBulkUnassignConfirm(false)}
-          onConfirm={handleBulkUnassignConfirmed}
+          onConfirm={handleConfirmBulkRemove}
+          title={`Remove ${selectedIds.length} Student(s)?`}
+          message={`Are you sure you want to remove the ${selectedIds.length} selected student(s) from ${sectionName}? They will be marked as 'Unassigned' and remain available in the student directory.`}
+          confirmText={removing ? "Removing..." : "Remove Selected"}
+          confirmVariant="danger"
         />
       )}
-    </>
+    </div>
   );
 };
 
-export const CampusStudentsModal = SectionMembersModal;
 export default SectionMembersModal;
